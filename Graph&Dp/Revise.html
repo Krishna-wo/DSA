@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSA Pattern Tracker — DP & Graphs</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: #2a2a38;
+    --border2: #3a3a50;
+    --text: #e8e8f0;
+    --muted: #6b6b88;
+    --accent: #7c6dff;
+    --accent2: #a78bfa;
+    --teal: #2dd4bf;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --pink: #f472b6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-orb {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,109,255,0.08) 0%, transparent 70%);
+    top: -200px;
+    right: -200px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-orb2 {
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(45,212,191,0.06) 0%, transparent 70%);
+    bottom: -100px;
+    left: -100px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 60px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-tag::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, var(--accent2), var(--teal));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-sub {
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 400;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  /* Progress overview */
+  .overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 32px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--border2); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.dp::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .stat-card.graph::before { background: linear-gradient(90deg, var(--teal), var(--green)); }
+  .stat-card.total::before { background: linear-gradient(90deg, var(--amber), var(--pink)); }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .stat-num {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .stat-card.dp .stat-num { color: var(--accent2); }
+  .stat-card.graph .stat-num { color: var(--teal); }
+  .stat-card.total .stat-num { color: var(--amber); }
+
+  .stat-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.6s ease;
+  }
+  .stat-card.dp .stat-bar-fill { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .stat-card.graph .stat-bar-fill { background: linear-gradient(90deg, var(--teal), var(--green)); }
+  .stat-card.total .stat-bar-fill { background: linear-gradient(90deg, var(--amber), var(--pink)); }
+
+  /* Tabs */
+  .tabs-wrap {
+    display: flex;
+    gap: 4px;
+    padding: 24px 0 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    bottom: -1px;
+  }
+  .tab:hover { color: var(--text); background: var(--surface); }
+  .tab.active {
+    color: var(--text);
+    background: var(--surface);
+    border-color: var(--border);
+    border-bottom-color: var(--surface);
+  }
+  .tab.active.dp { color: var(--accent2); }
+  .tab.active.graph { color: var(--teal); }
+
+  /* Main content */
+  main { padding: 32px 0 80px; }
+
+  .pattern-group {
+    margin-bottom: 40px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pattern-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .pattern-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+
+  .pattern-info { flex: 1; }
+
+  .pattern-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .pattern-algo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+
+  .pattern-algo strong {
+    color: var(--accent2);
+    font-weight: 500;
+  }
+
+  .pattern-algo em {
+    color: var(--teal);
+    font-style: normal;
+  }
+
+  .problems-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .problem-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: var(--surface);
+    transition: all 0.15s;
+    cursor: default;
+  }
+  .problem-row:hover { border-color: var(--border); background: var(--surface2); }
+  .problem-row.solved { opacity: 0.45; }
+
+  .checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1px solid var(--border2);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-size: 11px;
+  }
+  .checkbox:hover { border-color: var(--accent); }
+  .checkbox.checked {
+    background: var(--green);
+    border-color: var(--green);
+    color: #0a0a0f;
+    font-weight: 700;
+  }
+
+  .prob-link {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    text-decoration: none;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s;
+  }
+  .prob-link:hover { color: var(--accent2); text-decoration: underline; text-underline-offset: 3px; }
+
+  .plat-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+  .plat-LC { color: #ff9800; border-color: rgba(255,152,0,0.3); background: rgba(255,152,0,0.08); }
+  .plat-GFG { color: #4caf50; border-color: rgba(76,175,80,0.3); background: rgba(76,175,80,0.08); }
+
+  .diff-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .diff-easy { color: var(--green); background: rgba(74,222,128,0.1); }
+  .diff-medium { color: var(--amber); background: rgba(251,191,36,0.1); }
+  .diff-hard { color: var(--red); background: rgba(248,113,113,0.1); }
+
+  /* Section divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: gap;
+    gap: 12px;
+  }
+  .footer-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .footer-text a { color: var(--accent2); text-decoration: none; }
+  .footer-text a:hover { text-decoration: underline; }
+
+  .reset-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .reset-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* Hidden tab content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="glow-orb"></div>
+<div class="glow-orb2"></div>
+
+<div class="container">
+  <header>
+    <div class="header-tag">DSA Revision Sheet</div>
+    <h1>Master <span>DP & Graphs</span><br>Pattern by Pattern</h1>
+    <p class="header-sub">10 DP patterns · 11 Graph patterns · 100+ problems from LeetCode & GFG. Track your progress toward FAANG-level mastery.</p>
+  </header>
+
+  <div class="overview">
+    <div class="stat-card dp">
+      <div class="stat-label">Dynamic Programming</div>
+      <div class="stat-num" id="dp-done">0</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="dp-bar" style="width:0%"></div></div>
+      <div class="stat-label" style="margin-top:8px; margin-bottom:0" id="dp-sub">0 / 0 solved</div>
+    </div>
+    <div class="stat-card graph">
+      <div class="stat-label">Graph Algorithms</div>
+      <div class="stat-num" id="graph-done">0</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="graph-bar" style="width:0%"></div></div>
+      <div class="stat-label" style="margin-top:8px; margin-bottom:0" id="graph-sub">0 / 0 solved</div>
+    </div>
+    <div class="stat-card total">
+      <div class="stat-label">Overall Progress</div>
+      <div class="stat-num" id="total-pct">0%</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="total-bar" style="width:0%"></div></div>
+      <div class="stat-label" style="margin-top:8px; margin-bottom:0" id="total-sub">0 / 0 total</div>
+    </div>
+  </div>
+
+  <div class="tabs-wrap">
+    <button class="tab active dp" onclick="switchTab('dp')">// dynamic_programming</button>
+    <button class="tab graph" onclick="switchTab('graph')">// graph_algorithms</button>
+  </div>
+
+  <main>
+    <div id="dp-content" class="tab-content active"></div>
+    <div id="graph-content" class="tab-content"></div>
+  </main>
+
+  <footer>
+    <span class="footer-text">Progress saved in localStorage · Problems from <a href="https://leetcode.com" target="_blank">LeetCode</a> & <a href="https://geeksforgeeks.org" target="_blank">GeeksforGeeks</a></span>
+    <button class="reset-btn" onclick="resetProgress()">reset progress</button>
+  </footer>
+</div>
+
+<script>
+const DATA = {
+  dp: [
+    {
+      title: "1D DP — Linear / Fibonacci-style",
+      algo: "<strong>Algorithm:</strong> Recurrence on single index dp[i] = f(dp[i-1], dp[i-2]) | <em>Use when:</em> overlapping subproblems along a 1D array",
+      problems: [
+        { name: "Climbing Stairs", diff: "easy", url: "https://leetcode.com/problems/climbing-stairs/", plat: "LC" },
+        { name: "Fibonacci Number", diff: "easy", url: "https://leetcode.com/problems/fibonacci-number/", plat: "LC" },
+        { name: "Min Cost Climbing Stairs", diff: "easy", url: "https://leetcode.com/problems/min-cost-climbing-stairs/", plat: "LC" },
+        { name: "House Robber", diff: "medium", url: "https://leetcode.com/problems/house-robber/", plat: "LC" },
+        { name: "House Robber II (circular)", diff: "medium", url: "https://leetcode.com/problems/house-robber-ii/", plat: "LC" },
+        { name: "Jump Game", diff: "medium", url: "https://leetcode.com/problems/jump-game/", plat: "LC" },
+        { name: "Jump Game II", diff: "medium", url: "https://leetcode.com/problems/jump-game-ii/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Kadane's Algorithm — Subarray Problems",
+      algo: "<strong>Algorithm:</strong> Track local max/min while scanning | <em>Use when:</em> max/min contiguous subarray sum or product",
+      problems: [
+        { name: "Maximum Subarray", diff: "medium", url: "https://leetcode.com/problems/maximum-subarray/", plat: "LC" },
+        { name: "Maximum Product Subarray", diff: "medium", url: "https://leetcode.com/problems/maximum-product-subarray/", plat: "LC" },
+        { name: "Maximum Sum Circular Subarray", diff: "medium", url: "https://leetcode.com/problems/maximum-sum-circular-subarray/", plat: "LC" },
+      ]
+    },
+    {
+      title: "0/1 Knapsack & Unbounded Knapsack",
+      algo: "<strong>Algorithm:</strong> dp[i][w] = max value using i items with capacity w | <em>Use when:</em> select items with weight/value constraints",
+      problems: [
+        { name: "0/1 Knapsack Problem", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/0-1-knapsack-problem0945/1", plat: "GFG" },
+        { name: "Subset Sum", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/subset-sum-problem-1611555638/1", plat: "GFG" },
+        { name: "Partition Equal Subset Sum", diff: "medium", url: "https://leetcode.com/problems/partition-equal-subset-sum/", plat: "LC" },
+        { name: "Last Stone Weight II", diff: "medium", url: "https://leetcode.com/problems/last-stone-weight-ii/", plat: "LC" },
+        { name: "Coin Change — min coins", diff: "medium", url: "https://leetcode.com/problems/coin-change/", plat: "LC" },
+        { name: "Coin Change II — number of ways", diff: "medium", url: "https://leetcode.com/problems/coin-change-ii/", plat: "LC" },
+        { name: "Unbounded Knapsack", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/knapsack-with-duplicate-items4201/1", plat: "GFG" },
+        { name: "Rod Cutting", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/rod-cutting0840/1", plat: "GFG" },
+        { name: "Target Sum", diff: "medium", url: "https://leetcode.com/problems/target-sum/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Subsequence DP — LCS / LIS Family",
+      algo: "<strong>Algorithm:</strong> dp[i][j] comparing two sequences | <em>Use when:</em> longest common/increasing subsequences, edit operations",
+      problems: [
+        { name: "Longest Common Subsequence", diff: "medium", url: "https://leetcode.com/problems/longest-common-subsequence/", plat: "LC" },
+        { name: "Longest Increasing Subsequence", diff: "medium", url: "https://leetcode.com/problems/longest-increasing-subsequence/", plat: "LC" },
+        { name: "LIS — O(n log n) with patience sort", diff: "hard", url: "https://leetcode.com/problems/longest-increasing-subsequence/", plat: "LC" },
+        { name: "Edit Distance", diff: "hard", url: "https://leetcode.com/problems/edit-distance/", plat: "LC" },
+        { name: "Shortest Common Supersequence", diff: "hard", url: "https://leetcode.com/problems/shortest-common-supersequence/", plat: "LC" },
+        { name: "Distinct Subsequences", diff: "hard", url: "https://leetcode.com/problems/distinct-subsequences/", plat: "LC" },
+        { name: "Wildcard Matching", diff: "hard", url: "https://leetcode.com/problems/wildcard-matching/", plat: "LC" },
+        { name: "Regular Expression Matching", diff: "hard", url: "https://leetcode.com/problems/regular-expression-matching/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Grid / 2D DP",
+      algo: "<strong>Algorithm:</strong> dp[i][j] transitions on 2D grid | <em>Use when:</em> paths, cost, or count on grids",
+      problems: [
+        { name: "Unique Paths", diff: "medium", url: "https://leetcode.com/problems/unique-paths/", plat: "LC" },
+        { name: "Unique Paths II — with obstacles", diff: "medium", url: "https://leetcode.com/problems/unique-paths-ii/", plat: "LC" },
+        { name: "Minimum Path Sum", diff: "medium", url: "https://leetcode.com/problems/minimum-path-sum/", plat: "LC" },
+        { name: "Triangle — minimum path", diff: "medium", url: "https://leetcode.com/problems/triangle/", plat: "LC" },
+        { name: "Maximal Square", diff: "medium", url: "https://leetcode.com/problems/maximal-square/", plat: "LC" },
+        { name: "Dungeon Game", diff: "hard", url: "https://leetcode.com/problems/dungeon-game/", plat: "LC" },
+        { name: "Cherry Pickup II", diff: "hard", url: "https://leetcode.com/problems/cherry-pickup-ii/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Interval / Partition DP",
+      algo: "<strong>Algorithm:</strong> dp[i][j] = optimal way to split range [i,j] | <em>Use when:</em> matrix chain, burst, palindrome partition",
+      problems: [
+        { name: "Palindrome Partitioning II — min cuts", diff: "hard", url: "https://leetcode.com/problems/palindrome-partitioning-ii/", plat: "LC" },
+        { name: "Matrix Chain Multiplication", diff: "hard", url: "https://practice.geeksforgeeks.org/problems/matrix-chain-multiplication0303/1", plat: "GFG" },
+        { name: "Burst Balloons", diff: "hard", url: "https://leetcode.com/problems/burst-balloons/", plat: "LC" },
+        { name: "Strange Printer", diff: "hard", url: "https://leetcode.com/problems/strange-printer/", plat: "LC" },
+        { name: "Minimum Cost to Cut a Stick", diff: "hard", url: "https://leetcode.com/problems/minimum-cost-to-cut-a-stick/", plat: "LC" },
+      ]
+    },
+    {
+      title: "DP on Trees",
+      algo: "<strong>Algorithm:</strong> Post-order DFS returning dp state per node | <em>Use when:</em> path/sum/selection problems on binary trees",
+      problems: [
+        { name: "Diameter of Binary Tree", diff: "easy", url: "https://leetcode.com/problems/diameter-of-binary-tree/", plat: "LC" },
+        { name: "Binary Tree Maximum Path Sum", diff: "hard", url: "https://leetcode.com/problems/binary-tree-maximum-path-sum/", plat: "LC" },
+        { name: "House Robber III — on tree", diff: "medium", url: "https://leetcode.com/problems/house-robber-iii/", plat: "LC" },
+        { name: "Maximum Product of Splitted Binary Tree", diff: "medium", url: "https://leetcode.com/problems/maximum-product-of-splitted-binary-tree/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Bitmask DP",
+      algo: "<strong>Algorithm:</strong> dp[mask][i] = optimal over subset encoded as bitmask | <em>Use when:</em> TSP-type, exponential state spaces (N ≤ 20)",
+      problems: [
+        { name: "Travelling Salesman Problem", diff: "hard", url: "https://practice.geeksforgeeks.org/problems/travelling-salesman-problem2732/1", plat: "GFG" },
+        { name: "Minimum XOR Sum of Two Arrays", diff: "hard", url: "https://leetcode.com/problems/minimum-xor-sum-of-two-arrays/", plat: "LC" },
+        { name: "Number of Ways to Wear Different Hats", diff: "hard", url: "https://leetcode.com/problems/number-of-ways-to-wear-different-hats-to-each-other/", plat: "LC" },
+        { name: "Shortest Path Visiting All Nodes", diff: "hard", url: "https://leetcode.com/problems/shortest-path-visiting-all-nodes/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Stock / State Machine DP",
+      algo: "<strong>Algorithm:</strong> Explicit states (hold / notHold / cooldown) with transitions | <em>Use when:</em> buy-sell with constraints on transactions",
+      problems: [
+        { name: "Best Time to Buy and Sell Stock I", diff: "easy", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/", plat: "LC" },
+        { name: "Best Time to Buy and Sell Stock II", diff: "medium", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/", plat: "LC" },
+        { name: "Best Time to Buy and Sell Stock III — 2 tx", diff: "hard", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/", plat: "LC" },
+        { name: "Best Time to Buy and Sell Stock IV — k tx", diff: "hard", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/", plat: "LC" },
+        { name: "Best Time with Cooldown", diff: "medium", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/", plat: "LC" },
+        { name: "Best Time with Transaction Fee", diff: "medium", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Digit DP",
+      algo: "<strong>Algorithm:</strong> Count numbers in [L,R] satisfying property, digit by digit | <em>Use when:</em> count integers with digit-level constraints",
+      problems: [
+        { name: "Count Numbers with Unique Digits", diff: "medium", url: "https://leetcode.com/problems/count-numbers-with-unique-digits/", plat: "LC" },
+        { name: "Non-negative Integers without Consecutive Ones", diff: "hard", url: "https://leetcode.com/problems/non-negative-integers-without-consecutive-ones/", plat: "LC" },
+        { name: "Digit DP — classic count", diff: "hard", url: "https://practice.geeksforgeeks.org/problems/digit-dp-count-the-numbers/1", plat: "GFG" },
+      ]
+    },
+  ],
+  graph: [
+    {
+      title: "Graph Representation & BFS",
+      algo: "<strong>Algorithm:</strong> BFS with queue + visited set | <em>Use when:</em> shortest path in unweighted graph, level-order traversal, multi-source spread",
+      problems: [
+        { name: "BFS of Graph", diff: "easy", url: "https://practice.geeksforgeeks.org/problems/bfs-traversal-of-graph/1", plat: "GFG" },
+        { name: "Flood Fill", diff: "easy", url: "https://leetcode.com/problems/flood-fill/", plat: "LC" },
+        { name: "Number of Islands", diff: "medium", url: "https://leetcode.com/problems/number-of-islands/", plat: "LC" },
+        { name: "Rotting Oranges — multi-source BFS", diff: "medium", url: "https://leetcode.com/problems/rotting-oranges/", plat: "LC" },
+        { name: "01 Matrix — distance to nearest 0", diff: "medium", url: "https://leetcode.com/problems/01-matrix/", plat: "LC" },
+        { name: "Shortest Path in Binary Matrix", diff: "medium", url: "https://leetcode.com/problems/shortest-path-in-binary-matrix/", plat: "LC" },
+      ]
+    },
+    {
+      title: "DFS — Connected Components & Cycle Detection",
+      algo: "<strong>Algorithm:</strong> DFS with visited[] + recursion stack[] | <em>Use when:</em> connectivity, cycle check, topological sort prep",
+      problems: [
+        { name: "DFS of Graph", diff: "easy", url: "https://practice.geeksforgeeks.org/problems/depth-first-traversal-for-a-graph/1", plat: "GFG" },
+        { name: "Number of Connected Components", diff: "medium", url: "https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/", plat: "LC" },
+        { name: "Detect Cycle in Undirected Graph", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/detect-cycle-in-an-undirected-graph/1", plat: "GFG" },
+        { name: "Detect Cycle in Directed Graph", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/detect-cycle-in-a-directed-graph/1", plat: "GFG" },
+        { name: "Max Area of Island", diff: "medium", url: "https://leetcode.com/problems/max-area-of-island/", plat: "LC" },
+        { name: "Surrounded Regions", diff: "medium", url: "https://leetcode.com/problems/surrounded-regions/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Topological Sort — Kahn's BFS & DFS",
+      algo: "<strong>Algorithm:</strong> Kahn's = BFS with indegree array; DFS = post-order push to stack | <em>Use when:</em> task ordering with dependencies (DAG only)",
+      problems: [
+        { name: "Topological Sort", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/topological-sort/1", plat: "GFG" },
+        { name: "Course Schedule I — cycle check", diff: "medium", url: "https://leetcode.com/problems/course-schedule/", plat: "LC" },
+        { name: "Course Schedule II — ordering", diff: "medium", url: "https://leetcode.com/problems/course-schedule-ii/", plat: "LC" },
+        { name: "Find Eventual Safe States", diff: "medium", url: "https://leetcode.com/problems/find-eventual-safe-states/", plat: "LC" },
+        { name: "Alien Dictionary", diff: "hard", url: "https://leetcode.com/problems/alien-dictionary/", plat: "LC" },
+        { name: "Largest Color Value in DAG", diff: "hard", url: "https://leetcode.com/problems/largest-color-value-in-a-directed-graph/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Shortest Path — Dijkstra",
+      algo: "<strong>Algorithm:</strong> Min-heap (priority queue) + edge relaxation | <em>Use when:</em> single source shortest path, non-negative weights only",
+      problems: [
+        { name: "Dijkstra's Algorithm", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/implementing-dijkstra-set-1-adjacency-matrix/1", plat: "GFG" },
+        { name: "Network Delay Time", diff: "medium", url: "https://leetcode.com/problems/network-delay-time/", plat: "LC" },
+        { name: "Path with Minimum Effort", diff: "medium", url: "https://leetcode.com/problems/path-with-minimum-effort/", plat: "LC" },
+        { name: "Cheapest Flights Within K Stops", diff: "medium", url: "https://leetcode.com/problems/cheapest-flights-within-k-stops/", plat: "LC" },
+        { name: "Minimum Cost to Reach Destination in Time", diff: "hard", url: "https://leetcode.com/problems/minimum-cost-to-reach-destination-in-time/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Shortest Path — Bellman-Ford",
+      algo: "<strong>Algorithm:</strong> Relax all edges V-1 times | <em>Use when:</em> negative edge weights exist, detect negative cycle, or K-step constraint",
+      problems: [
+        { name: "Bellman-Ford Algorithm", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/distance-from-the-source-bellman-ford-algorithm/1", plat: "GFG" },
+        { name: "Negative Weight Cycle", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/negative-weight-cycle3504/1", plat: "GFG" },
+        { name: "Cheapest Flights Within K Stops — BF variant", diff: "medium", url: "https://leetcode.com/problems/cheapest-flights-within-k-stops/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Shortest Path — Floyd-Warshall",
+      algo: "<strong>Algorithm:</strong> dp[i][j] using each vertex k as intermediate | <em>Use when:</em> all-pairs shortest path, small N (≤ 500)",
+      problems: [
+        { name: "Floyd Warshall Algorithm", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/implementing-floyd-warshall2042/1", plat: "GFG" },
+        { name: "Find the City with Fewest Neighbors", diff: "medium", url: "https://leetcode.com/problems/find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Minimum Spanning Tree — Kruskal & Prim",
+      algo: "<strong>Algorithm:</strong> Kruskal = sort edges + DSU; Prim = min-heap from any source | <em>Use when:</em> connect all nodes at minimum total edge cost",
+      problems: [
+        { name: "Minimum Spanning Tree — Prim's", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/minimum-spanning-tree/1", plat: "GFG" },
+        { name: "Min Cost to Connect All Points — Kruskal", diff: "medium", url: "https://leetcode.com/problems/min-cost-to-connect-all-points/", plat: "LC" },
+        { name: "Optimize Water Distribution", diff: "hard", url: "https://leetcode.com/problems/optimize-water-distribution-in-a-village/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Disjoint Set Union — Union-Find",
+      algo: "<strong>Algorithm:</strong> Path compression + union by rank | <em>Use when:</em> dynamic connectivity, cycle detection, Kruskal's MST",
+      problems: [
+        { name: "Number of Provinces", diff: "medium", url: "https://leetcode.com/problems/number-of-provinces/", plat: "LC" },
+        { name: "Redundant Connection", diff: "medium", url: "https://leetcode.com/problems/redundant-connection/", plat: "LC" },
+        { name: "Accounts Merge", diff: "medium", url: "https://leetcode.com/problems/accounts-merge/", plat: "LC" },
+        { name: "Satisfiability of Equality Equations", diff: "medium", url: "https://leetcode.com/problems/satisfiability-of-equality-equations/", plat: "LC" },
+        { name: "Making a Large Island", diff: "hard", url: "https://leetcode.com/problems/making-a-large-island/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Strongly Connected Components — Kosaraju & Tarjan",
+      algo: "<strong>Algorithm:</strong> Kosaraju = 2 DFS passes on original + transposed graph; Tarjan = DFS with low-link values | <em>Use when:</em> SCCs, bridges, articulation points",
+      problems: [
+        { name: "Kosaraju's SCC Algorithm", diff: "hard", url: "https://practice.geeksforgeeks.org/problems/strongly-connected-components-kosarajus-algo/1", plat: "GFG" },
+        { name: "Tarjan's SCC Algorithm", diff: "hard", url: "https://practice.geeksforgeeks.org/problems/strongly-connected-component-tarjanss-algo-1587115621/1", plat: "GFG" },
+        { name: "Critical Connections — Bridges", diff: "hard", url: "https://leetcode.com/problems/critical-connections-in-a-network/", plat: "LC" },
+        { name: "Articulation Points", diff: "hard", url: "https://practice.geeksforgeeks.org/problems/articulation-point-1/1", plat: "GFG" },
+      ]
+    },
+    {
+      title: "Bipartite Graph Checking",
+      algo: "<strong>Algorithm:</strong> 2-coloring with BFS or DFS | <em>Use when:</em> check if graph is 2-colorable, odd cycle detection",
+      problems: [
+        { name: "Is Graph Bipartite?", diff: "medium", url: "https://leetcode.com/problems/is-graph-bipartite/", plat: "LC" },
+        { name: "Possible Bipartition", diff: "medium", url: "https://leetcode.com/problems/possible-bipartition/", plat: "LC" },
+      ]
+    },
+    {
+      title: "Advanced — DP on Graphs",
+      algo: "<strong>Algorithm:</strong> Combine graph traversal (BFS/DFS/Topo) with DP state | <em>Use when:</em> path count, longest path in DAG, state-based traversal",
+      problems: [
+        { name: "Longest Path in DAG", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/longest-path-in-a-directed-acyclic-graph/1", plat: "GFG" },
+        { name: "Minimum Multiplications to Reach End", diff: "medium", url: "https://practice.geeksforgeeks.org/problems/minimum-multiplications-to-reach-end/1", plat: "GFG" },
+        { name: "Number of Ways to Reach Destination", diff: "hard", url: "https://practice.geeksforgeeks.org/problems/number-of-paths0926/1", plat: "GFG" },
+        { name: "Word Ladder II", diff: "hard", url: "https://leetcode.com/problems/word-ladder-ii/", plat: "LC" },
+      ]
+    },
+  ]
+};
+
+const solved = {};
+
+function load() {
+  try {
+    const raw = localStorage.getItem('dsa_gh_solved');
+    if (raw) Object.assign(solved, JSON.parse(raw));
+  } catch(e) {}
+}
+
+function save() {
+  try { localStorage.setItem('dsa_gh_solved', JSON.stringify(solved)); } catch(e) {}
+}
+
+function key(tab, si, pi) { return `${tab}_${si}_${pi}`; }
+
+function toggle(k) {
+  solved[k] = !solved[k];
+  save();
+  renderAll();
+}
+
+function getStats(tab) {
+  let total = 0, done = 0;
+  DATA[tab].forEach((s, si) => s.problems.forEach((p, pi) => {
+    total++; if (solved[key(tab, si, pi)]) done++;
+  }));
+  return { total, done };
+}
+
+function updateStatCards() {
+  const dp = getStats('dp');
+  const gr = getStats('graph');
+  const total = dp.total + gr.total;
+  const done = dp.done + gr.done;
+  const pct = total ? Math.round(done / total * 100) : 0;
+
+  document.getElementById('dp-done').textContent = dp.done;
+  document.getElementById('dp-sub').textContent = `${dp.done} / ${dp.total} solved`;
+  document.getElementById('dp-bar').style.width = (dp.total ? Math.round(dp.done/dp.total*100) : 0) + '%';
+
+  document.getElementById('graph-done').textContent = gr.done;
+  document.getElementById('graph-sub').textContent = `${gr.done} / ${gr.total} solved`;
+  document.getElementById('graph-bar').style.width = (gr.total ? Math.round(gr.done/gr.total*100) : 0) + '%';
+
+  document.getElementById('total-pct').textContent = pct + '%';
+  document.getElementById('total-sub').textContent = `${done} / ${total} total`;
+  document.getElementById('total-bar').style.width = pct + '%';
+}
+
+function renderTab(tab) {
+  const el = document.getElementById(`${tab}-content`);
+  el.innerHTML = DATA[tab].map((s, si) => `
+    <div class="pattern-group">
+      <div class="pattern-header">
+        <div class="pattern-num">${String(si+1).padStart(2,'0')}</div>
+        <div class="pattern-info">
+          <div class="pattern-title">${s.title}</div>
+          <div class="pattern-algo">${s.algo}</div>
+        </div>
+      </div>
+      <div class="problems-grid">
+        ${s.problems.map((p, pi) => {
+          const k = key(tab, si, pi);
+          const done = !!solved[k];
+          return `
+            <div class="problem-row ${done ? 'solved' : ''}">
+              <div class="checkbox ${done ? 'checked' : ''}" onclick="toggle('${k}')">${done ? '✓' : ''}</div>
+              <a class="prob-link" href="${p.url}" target="_blank" rel="noopener">${p.name}</a>
+              <span class="plat-badge plat-${p.plat}">${p.plat}</span>
+              <span class="diff-badge diff-${p.diff}">${p.diff}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAll() {
+  renderTab('dp');
+  renderTab('graph');
+  updateStatCards();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab.${tab}`).classList.add('active');
+  document.getElementById(`${tab}-content`).classList.add('active');
+}
+
+function resetProgress() {
+  if (confirm('Reset all progress? This cannot be undone.')) {
+    Object.keys(solved).forEach(k => delete solved[k]);
+    save();
+    renderAll();
+  }
+}
+
+load();
+renderAll();
+</script>
+</body>
+</html>

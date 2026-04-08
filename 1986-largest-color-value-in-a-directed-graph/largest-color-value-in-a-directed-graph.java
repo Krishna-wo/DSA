@@ -1,45 +1,52 @@
 import java.util.*;
 
 class Solution{
-    public int largestPathValue(String colors,int[][]edges){
-        int n=colors.length(),ans=0;
+    ArrayList<ArrayList<Integer>>graph;
+    int[][]dp;
+    int[]vis;
+    String colors;
+    int n,ans=0;
 
-        ArrayList<ArrayList<Integer>>graph=new ArrayList<>();
+    public int largestPathValue(String colors,int[][]edges){
+        this.colors=colors;
+        n=colors.length();
+
+        graph=new ArrayList<>();
         for(int i=0;i<n;i++)graph.add(new ArrayList<>());
 
-        int[][]cnt=new int[n][26];
-        int[]indegree=new int[n];
+        for(int[]e:edges)graph.get(e[0]).add(e[1]);
 
-        for(int[]e:edges){
-            graph.get(e[0]).add(e[1]);
-            indegree[e[1]]++;
-        }
+        dp=new int[n][26];
+        vis=new int[n];
 
-        Queue<Integer>q=new LinkedList<>();
         for(int i=0;i<n;i++){
-            if(indegree[i]==0)q.offer(i);
+            if(vis[i]==0){
+                if(dfs(i))return-1;
+            }
         }
+        return ans;
+    }
 
-        int processed=0;
+    boolean dfs(int node){
+        vis[node]=1;
 
-        while(!q.isEmpty()){
-            int node=q.poll();
-            processed++;
+        for(int nbr:graph.get(node)){
+            if(vis[nbr]==1)return true;
 
-            int col=colors.charAt(node)-'a';
-            cnt[node][col]++;
-            ans=Math.max(ans,cnt[node][col]);
+            if(vis[nbr]==0){
+                if(dfs(nbr))return true;
+            }
 
-            for(int nbr:graph.get(node)){
-                indegree[nbr]--;
-                if(indegree[nbr]==0)q.offer(nbr);
-
-                for(int j=0;j<26;j++){
-                    cnt[nbr][j]=Math.max(cnt[nbr][j],cnt[node][j]);
-                }
+            for(int c=0;c<26;c++){
+                dp[node][c]=Math.max(dp[node][c],dp[nbr][c]);
             }
         }
 
-        return processed==n?ans:-1;
+        int col=colors.charAt(node)-'a';
+        dp[node][col]++;
+        ans=Math.max(ans,dp[node][col]);
+
+        vis[node]=2;
+        return false;
     }
 }

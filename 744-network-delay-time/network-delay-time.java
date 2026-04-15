@@ -36,8 +36,12 @@ class Solution {
             if(dist[i]==Integer.MAX_VALUE) return -1;
             
         }
-        Arrays.sort(dist);
-        return dist[n-1];
+       int max = 0;
+for(int i = 1; i <= n; i++){
+    if(dist[i] == Integer.MAX_VALUE) return -1;
+    max = Math.max(max, dist[i]);
+}
+return max;
         
     }
 }

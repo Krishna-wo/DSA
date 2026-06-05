@@ -12,7 +12,7 @@
 class Solution {
     public List<Integer> distanceK(TreeNode root, TreeNode target, int k) {
         Map<TreeNode, TreeNode> parent_track = new HashMap<>();
-        markParents(root, parent_track, root);
+        markParents(root, parent_track,target);
         Map<TreeNode, Boolean> visited = new HashMap<>();
         Queue<TreeNode> queue = new LinkedList<TreeNode>();
         queue.offer(target);

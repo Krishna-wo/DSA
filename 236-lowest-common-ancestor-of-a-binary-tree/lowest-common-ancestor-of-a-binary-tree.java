@@ -7,30 +7,41 @@
  *     TreeNode(int x) { val = x; }
  * }
  */
+// class Solution {
+//     boolean findPath(TreeNode root, TreeNode target, List<TreeNode> path) {
+//         if(root==null) return false;
+//         path.add(root);
+//         if(root == target)return true;
+//         if(findPath(root.left,target,path) || findPath(root.right, target, path)) {
+//             return true;
+//         }
+//         path.remove(path.size() - 1);
+//         return false;
+//     }
+//     public TreeNode lowestCommonAncestor(TreeNode root,TreeNode p,TreeNode q){
+//         List<TreeNode> path1 = new ArrayList<>();
+//         List<TreeNode> path2 = new ArrayList<>();
+//         findPath(root,p,path1);
+//         findPath(root,q,path2);
+//         TreeNode lca = null;
+//         int n = Math.min(path1.size(), path2.size());
+//         for(int i =0;i< n;i++) {
+//             if (path1.get(i) == path2.get(i))
+//                 lca = path1.get(i);
+//             else
+//                 break;
+//         }
+//         return lca;
+//     }
+// }
 class Solution {
-    boolean findPath(TreeNode root, TreeNode target, List<TreeNode> path) {
-        if(root==null) return false;
-        path.add(root);
-        if(root == target)return true;
-        if(findPath(root.left,target,path) || findPath(root.right, target, path)) {
-            return true;
-        }
-        path.remove(path.size() - 1);
-        return false;
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root==null || root==p || root==q) return root;
+        TreeNode l=lowestCommonAncestor(root.left, p, q);
+        TreeNode r=lowestCommonAncestor(root.right, p, q);
+        if(l == null) return r;
+        if(r == null) return l;
+        return root;
     }
-    public TreeNode lowestCommonAncestor(TreeNode root,TreeNode p,TreeNode q){
-        List<TreeNode> path1 = new ArrayList<>();
-        List<TreeNode> path2 = new ArrayList<>();
-        findPath(root,p,path1);
-        findPath(root,q,path2);
-        TreeNode lca = null;
-        int n = Math.min(path1.size(), path2.size());
-        for(int i =0;i< n;i++) {
-            if (path1.get(i) == path2.get(i))
-                lca = path1.get(i);
-            else
-                break;
-        }
-        return lca;
-    }
+
 }

@@ -34,14 +34,26 @@
 //         return lca;
 //     }
 // }
+
 class Solution {
     public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
-        if(root==null || root==p || root==q) return root;
-        TreeNode l=lowestCommonAncestor(root.left, p, q);
-        TreeNode r=lowestCommonAncestor(root.right, p, q);
-        if(l == null) return r;
-        if(r == null) return l;
-        return root;
-    }
+        // Base Cases
+        if (root == null || root == p || root == q) {
+            return root;
+        }
+        //  Subproblems (Post-Order Traversal: Left, Right)
+        TreeNode leftResult = lowestCommonAncestor(root.left, p, q);
+        TreeNode rightResult = lowestCommonAncestor(root.right, p, q);
 
+        // 3. DP Transition Logic (Node Phase)
+        // If both sides found a target, this current node is the LCA split point
+        // dono se aa raha hai node so current node return kr de 
+        if (leftResult != null && rightResult != null) {
+            return root;
+        }
+
+        // Otherwise, return whichever side actually found a node up to the parent
+        // ese soch kya left se aa rhar hai node yaa right se aa raha h node w
+        return (leftResult != null) ? leftResult : rightResult;
+    }
 }

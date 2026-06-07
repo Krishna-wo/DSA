@@ -13,28 +13,12 @@
  *     }
  * }
  */
+ // thisnk like a dp problem so f(root ) if root==nul return 0 other wuse max of left adn right think of last node only three node parent and 2 its child so height will be max of left adn right height thats the think bottom up approch think always 
 class Solution {
     public int maxDepth(TreeNode root) {
-        Queue<TreeNode> q = new LinkedList<>();
-        q.add(root);
         if(root==null) return 0;
-        if(root.left==null && root.right==null) return 1;
-        int count=0;
-        while(!q.isEmpty()){
-            int ls=q.size();
-            for(int i=0;i<ls;i++){
-                TreeNode node = q.poll();
-                if(node.left!=null){
-                    q.add(node.left);
-                }
-                if(node.right!=null){
-                    q.add(node.right);
-                }
-
-            }
-            count++;
-        }
-        return count;
+        return Math.max(maxDepth(root.left),maxDepth(root.right))+1;
+         
         
     }
 }

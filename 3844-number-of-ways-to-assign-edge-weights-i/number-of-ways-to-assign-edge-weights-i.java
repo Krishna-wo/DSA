@@ -27,18 +27,27 @@ class Solution{
         return maxDepth;
     }
   
-   private long power(long base,int exp,int mod){
-    long result=1;
-    base=base%mod;
+//  private long power(long base,int exp,int mod){
+//     if(exp==0) return 1;
     
-    while(exp>0){
-        // Check if exp is odd using modulo
-        if(exp%2!=0){
-            result=(result*base)%mod;
-        }
-        base=(base*base)%mod; // Square the base
-        exp=exp/2; // Divide exp by 2
+//     // Calculate half power down the tree recursively
+//     long half=power(base,exp/2,mod);
+//     long halfSquare=(half*half)%mod;
+    
+//     // If exponent is odd, multiply by base one extra time
+//     if(exp%2!=0){
+//         return (halfSquare*(base%mod))%mod;
+//     }
+//     return halfSquare;
+// }
+private long power(long base,int exp,int mod){
+    long result=1;
+    
+    // Just loop 'exp' times and multiply
+    for(int i=0;i<exp;i++){
+        result=(result*base)%mod;
     }
+    
     return result;
 }
 }

@@ -1,48 +1,25 @@
-/**
- * Definition for singly-linked list.
- * public class ListNode {
- *     int val;
- *     ListNode next;
- *     ListNode() {}
- *     ListNode(int val) { this.val = val; }
- *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
- * }
- */
-/**
- * Definition for a binary tree node.
- * public class TreeNode {
- *     int val;
- *     TreeNode left;
- *     TreeNode right;
- *     TreeNode() {}
- *     TreeNode(int val) { this.val = val; }
- *     TreeNode(int val, TreeNode left, TreeNode right) {
- *         this.val = val;
- *         this.left = left;
- *         this.right = right;
- *     }
- * }
- */
 class Solution {
     public TreeNode sortedListToBST(ListNode head) {
-        ListNode tail=null;
-         return f(head,tail);
+        return f(head, null);
     }
-    TreeNode f(ListNode head,ListNode tail){
-         if (head == tail) return null;
-        ListNode m=mid(head,tail);
-        TreeNode root=new TreeNode(m.val);
-        root.left=f(head,m);
-        root.right=f(m.next,tail);
+
+    TreeNode f(ListNode head, ListNode tail) {
+        if (head == tail) return null;          // base case
+
+        ListNode m = mid(head, tail);
+        TreeNode root = new TreeNode(m.val);
+        root.left  = f(head, m);               // left sublist [head, m)
+        root.right = f(m.next, tail);           // right sublist [m+1, tail)
         return root;
     }
-    ListNode mid(ListNode head ,ListNode tail){
-       ListNode slow=head;
-       ListNode fast=head;
-       while(fast!=tail && fast.next!=tail){
-        slow=slow.next;
-        fast=fast.next.next;
-       }
-       return slow;
+
+    ListNode mid(ListNode head, ListNode tail) {
+        ListNode slow = head;
+        ListNode fast = head;
+        while (fast != tail && fast.next != tail) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return slow;                            // slow IS the mid
     }
 }

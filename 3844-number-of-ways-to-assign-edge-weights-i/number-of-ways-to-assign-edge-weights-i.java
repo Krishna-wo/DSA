@@ -26,18 +26,19 @@ class Solution{
         }
         return maxDepth;
     }
-    //not getting thsi  need to learn bitwise operator  ?
-    private long power(long base,int exp,int mod){
-        long result=1;
-        base=base%mod;
-        
-        while(exp>0){
-            if((exp&1)==1){
-                result=(result*base)%mod;
-            }
-            base=(base*base)%mod;
-            exp>>=1;
+  
+   private long power(long base,int exp,int mod){
+    long result=1;
+    base=base%mod;
+    
+    while(exp>0){
+        // Check if exp is odd using modulo
+        if(exp%2!=0){
+            result=(result*base)%mod;
         }
-        return result;
+        base=(base*base)%mod; // Square the base
+        exp=exp/2; // Divide exp by 2
     }
+    return result;
+}
 }

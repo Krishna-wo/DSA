@@ -14,27 +14,30 @@
  * }
  */
 class Solution {
-    public boolean findTarget(TreeNode root, int k) {
-        List<Integer> nums = new ArrayList<>();
-        preorder(root, nums);
-        Set<Integer> seen = new HashSet<>();
-        for (int num : nums) {
-            int complement = k - num;
-            if (seen.contains(complement)) {
-                return true;
-            }
-            seen.add(num);
-        }
-        
-        return false;
+    List<Integer> arr = new ArrayList<>();
+    private void inorder(TreeNode root){
+        if(root == null)return;
+        inorder(root.left);
+        arr.add(root.val);
+        inorder(root.right);
     }
-    
-    private void preorder(TreeNode node, List<Integer> nums) {
-        if (node == null) {
-            return;
+
+    public boolean findTarget(TreeNode root,int k){
+        inorder(root);
+        int left = 0;
+        int right = arr.size() - 1;
+
+        while(left<right){
+            int sum = arr.get(left)+arr.get(right);
+
+            if(sum==k){
+                return true;
+            }else if(sum<k){
+                left++;
+            }else{
+                right--;
+            }
         }
-        nums.add(node.val); 
-        preorder(node.left, nums); 
-        preorder(node.right, nums); 
+        return false;
     }
 }
